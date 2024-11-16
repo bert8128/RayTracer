@@ -15,7 +15,7 @@ struct Material
     FLT m_Ambient = 0.05f;
     FLT m_Diffuse = 1.f;
     FLT m_Specular = 1.f;
-    FLT m_Reflection = 0.5f;
+    FLT m_Reflection = 0.8f;
     ColourFunc m_Func;
 
     Material(ColourFunc func)

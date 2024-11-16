@@ -20,12 +20,11 @@ struct Colour
     {
         return Colour{ m_R + other.m_R, m_G + other.m_G, m_B + other.m_B };
     }
-    Colour& operator+=(const Colour other)
+    void operator+=(const Colour other)
     {
         m_R += other.m_R;
         m_G += other.m_G;
         m_B += other.m_B;
-        return *this;
     }
 
     Colour operator*(FLT other) const
@@ -33,12 +32,11 @@ struct Colour
         return Colour{ m_R * other, m_G * other, m_B * other };
     }
 
-    Colour& operator*=(FLT other)
+    void operator*=(FLT other)
     {
         m_R *= other;
         m_G *= other;
         m_B *= other;
-        return *this;
     }
 
     /*Colour operator/(FLT other) const

@@ -19,6 +19,8 @@ struct RenderEngine
     {
         const auto width = scene.m_W;
         const auto height = scene.m_H;
+//#define TEST
+#ifndef TEST
         const auto aspectRatio = static_cast<FLT>(width) / height;
         const FLT x0 = -1.f;
         const FLT x1 = +1.f;
@@ -26,10 +28,22 @@ struct RenderEngine
         const auto y0 = -1.f / aspectRatio;
         const auto y1 = +1.f / aspectRatio;
         const auto ystep = (y1 - y0) / (height - 1);
-
         const auto camera = scene.m_Camera;
+#endif        
         Image image(width, height);
 
+#ifdef TEST
+        for (auto x = 0; x < width; ++x)
+        {
+            for (auto y = 0; y < height; ++y)
+            {
+                if (y <= height / 2 && x <= width / 2) image.setPixel(x, y, Colour(0.75, 0.25, 0.5));
+                if (y > height / 2 && x < width / 2) image.setPixel(x, y, Colour(0.5, 0.75, 0.25));
+                if (y <= height / 2 && x >= width / 2) image.setPixel(x, y, Colour(0.25, 0.5, 0.75));
+                if (y > height / 2 && x > width / 2) image.setPixel(x, y, Colour(0.5, 0.5, 0.5));
+            }
+        }
+#else
         for (auto j = 0; j < height; ++j)
         {
             auto y = y0 + j * ystep;
@@ -40,12 +54,14 @@ struct RenderEngine
                 image.setPixel(i, j, RenderEngine::rayTrace(ray, scene));
             }
         }
+#endif
+
         return image;
     }
 
     static Colour rayTrace(Ray ray, const Scene& scene, int depth=0)
     {
-        constexpr auto MAX_DEPTH = 3;
+        constexpr auto MAX_DEPTH = 5;
         constexpr FLT MIN_DISPLACE = 0.0001f;
             
         auto sphereDist = RenderEngine::findNearest(ray, scene);
@@ -96,17 +112,24 @@ struct RenderEngine
         const auto& material = sphere.m_Material;
         const auto objColour = material.colourAt(hit_pos);
         const auto hpToCam = scene.m_Camera - hit_pos;
-        const FLT specularK = 50;
-        Colour colour = Colour::fromHex("#FFFFFF");
-        colour *= material.m_Ambient;
+        constexpr FLT specularK = 50;
+        Colour colour{ material.m_Ambient , material.m_Ambient , material.m_Ambient };// always from white?  Shouldn't the ambient colour take into account the colour of the material. And perhaps an ambient shade
         for (auto& light : scene.m_Lights)
         {
             const auto hpToLight = Ray(hit_pos, light.m_P - hit_pos);
-            //Lambert
-            colour += objColour * material.m_Diffuse * mmax(normal.dotProd(hpToLight.m_Direction), 0);
-            //Blinn-Phong
-            auto half_vector = (hpToLight.m_Direction + hpToCam).normalise();
-            colour += light.m_C * material.m_Specular * pow((mmax(normal.dotProd(half_vector), 0)), specularK);
+            {
+                //Lambert
+                const auto dp = mmax(normal.dotProd(hpToLight.m_Direction), 0);
+                colour += objColour * material.m_Diffuse * dp;
+            }
+            {
+                //Blinn-Phong
+                auto half_vector = (hpToLight.m_Direction + hpToCam);
+                half_vector = half_vector.normalise();
+                const auto dp = mmax(normal.dotProd(half_vector), 0);
+                const auto p = pow(dp, specularK);
+                colour += light.m_C * material.m_Specular * p;
+            }
         }
         return colour;
     }
